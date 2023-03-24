@@ -11,7 +11,7 @@ volatile unsigned int botao_pedestre = 0;
 // "0" - Dia | "1"- Noite.
 volatile unsigned int periodo_do_dia  = 0; 
 
-// FUNÇÕES DE CONFIGURAÇÃO DAS INTERRUPÇÕES:
+// CONFIGURAÇÃO DAS INTERRUPÇÕES PERIÓDICAS
 
 void configuracao_Timer0(){
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -40,12 +40,60 @@ void configuracao_Timer0(){
   TCCR0B = 0x04;
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
+
+// CONFIGURAÇÃO DAS ROTINAS DE INTERRUPÇÃO
+
 void configura_interrupcao_LDR(){
-  // 
+  // Configura a ISR para o LDR
+  
 
 }
-void configura_interrupcao_botao_(){
-  // 
+void configura_interrupcao_botao_pedestre(){
+  // Configura a ISR para o botao_pedestre
+   
+}
+
+// CONFIGURAÇÃO DAS ENTRADAS
+
+void configura_pinos_entrada(){
+  // Configura os pinos utilizados como entrada para o LDR e o botão de pedestre.
+  
+  pinMode(14, INPUT); // LDR
+  pinMode(6, INPUT); // Botão pedestre
+  
+}
+
+// CONFIGURAÇÃO DAS SAÍDAS
+
+void configura_pinos_saida(){
+  // Configura os pinos utilizados como saida para os LEDs dos semaforos (pedestre e veiculos).
+  
+  pinMode(15, OUTPUT); // LED vermelho para o farol de veiculos
+  pinMode(16, OUTPUT); // LED amarelo para o farol de veiculos
+  pinMode(17, OUTPUT); // LED verde para o farol de veiculos
+  pinMode(18, OUTPUT); // LED vermelho para o farol de pedestres
+  pinMode(19, OUTPUT); // LED verde para o farol de pedestres
+}
+
+// CONFIGURAÇÃO DO DECODIFICADOR DO DISPLAY DE 7 SEGMENTOS
+
+void configura_decodificador(){
+  // Configura os pinos utilizados como saída para decodificador do display de 7 segmentos.
+  
+  pinMode(11, OUTPUT); // Entrada 4
+  pinMode(10, OUTPUT); // Entrada 3
+  pinMode(9, OUTPUT); // Entrada 2
+  pinMode(8, OUTPUT); // Entrada 1
+  
+} 
+
+// CONFIGURAÇÃO DO SELETOR DE DISPLAY DE 7 SEGMENTOS
+
+void configura_seletor_de_display_de_sete_segmentos(){
+  // Configura os pinos utilizados como saída para selecionar o display que deve mostrar a contagem.
+  
+  pinMode(5,OUTPUT); // DISPLAY DO VEICULO
+  pinMode(4, OUTPUT); // DISPLAY DO PEDESTRE 
 }
 
 // ROTINAS DE SERVIÇO DE INTERRUPÇÃO;
@@ -53,7 +101,8 @@ void configura_interrupcao_botao_(){
 ISR(TIMER0_COMPA_vect){
   cont++;  
 }
-ISR(){
+
+ISR_botao_pedestre(){
   //  Interrupção executada quando o pedestre pressiona o botão solicitando a parada dos carros.
   botao_pedestre = 1; 
 }
@@ -71,6 +120,10 @@ void setup() {
 
   cli();
   configuracao_Timer0();
+  configura_pinos_entrada(); // CONFIGURA ENTRADAS
+  configura_pinos_saida(); // CONFIGURA SAIDAS
+  configura_decodificador(); // CONFIGURA DECODIFICADOR
+  configura_seletor_de_display_de_sete_segmentos(); // CONFIGURA SELETOR DE DISPLAY 7 SEGMENTOS
   sei();
 
 }
