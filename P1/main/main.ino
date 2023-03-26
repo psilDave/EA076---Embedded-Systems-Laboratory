@@ -1,18 +1,31 @@
 // Variável responsavel por contar as interrupções períodicas geradas pelo Timer.
 volatile unsigned int cont = 0;
 
+// Variável responsavel por contar quantas interrupções períodicas geradas pelo timer são necessárias para se verificar se houve uma alteração no valor lido pelo LDR para evitar transições espurias (farois, passaros).
+volatile unsigned int cont_time_para_checar_valor_LDR = 0;
+
 // botao_pedestre : Variável responsável por armazenar o pressionamento do botão pelo pedestre solicitando a parada dos carros. 
-// Valores possíveis:
-// "0" - Parada não foi solicitada | "1"- Parada solicitada.
+// Valores possíveis: "0" - Parada não foi solicitada | "1"- Parada solicitada.
 volatile unsigned int botao_pedestre = 0;
 
 // periodo_do_dia: Variável responsável por armazenar o valor regrado pelo LDR indicando o período do dia. 
-// Valores possíveis:
-// "0" - Dia | "1"- Noite.
+// Valores possíveis: "0" - Dia | "1"- Noite.
 volatile unsigned int periodo_do_dia  = 0;
 
+// Define o estado da maquina de estados noturna.
+// Valores possíveis: "0" - LEDs ligados | "1" - LEDs desligados.
+volatile unsigned int estado_noturno = 1;
 
-// PINOS IMPORTANTES
+// Define o estado da maquina de estados diurna.
+// Valores possíveis: "0" - Semaforo aberto para os carros, semaforo fechado para pedestres e displays desligados.
+//                    "1" - Semaforo fechando para os carros, semaforo fechado para os pedestres e displays desligados.
+//                    "2" - Semaforo fechado para os carros, semaforo aberto para os pedestres, displays ligados e contando o tempo restante para travessia dos pedestres.
+//                    "3" - Semaforo fechado para os carros, semaforo piscando vermelho para pedestres, displays ligados,de forma que o display dos carros está contando e do pedestre piscando com o numero "0". 
+
+volatile unsigned int estado_diurno = 0;
+
+
+// Pinos chamados no código várias vezes e que tem um sentido semantico importante em suas chamadas.
 int pino_LDR = 14;
 int pino_botao_pedestre = 6;
 
@@ -102,7 +115,8 @@ void configura_seletor_de_display_de_sete_segmentos(){
 // ROTINAS DE SERVIÇO DE INTERRUPÇÃO;
 
 ISR(TIMER0_COMPA_vect){
-  cont++;  
+  cont++;
+  cont_time_para_checar_valor_LDR++;  
 }
 
 ISR(PCINT2_vect){
@@ -110,7 +124,7 @@ ISR(PCINT2_vect){
   
   if(digitalRead(pino_botao_pedestre) == 1){ // Verifica-se nivel alto no pino da interrupção para indicar que o botão do pedestre foi acionado.
     botao_pedestre = 1; // Indica-se que o botão do pedestre foi selecionado.
-    count = 0; // Inicia-se a contagem do tempo para  
+    cont = 0; // Inicia-se a contagem do tempo para  
   }
   
 }
@@ -128,10 +142,10 @@ void conta_meio_segundo(){
   while(cont < 250){}
 
 }
-void conta_3_segundos(){
+void conta_100ms(){
   // Contador de 3 segundos utilizando as interrupções periodicas geradas pelo timer.
   cont = 0;
-  while(cont < 1500){}
+  while(cont < 50){}
 }
 
 // VALORES DO DISPLAY DE 7 SEGMENTOS
@@ -217,15 +231,20 @@ void conversor_decimal_binario_para_display_7_segmentos(int valor_decimal){
 void verifica_periodo_do_dia_pelo_LDR(){
   // Função de varredura para verificar se houve alteração no período do dia e se essa alteração não foi espúria (farol de carro, passaros).
   
-  valor_LDR = map(analogRead(pino_LDR), 0, 1023, 0, 100); // Le-se o valor do  LDR.
-  conta_3_segundos(); // Espera-se 3 segundos para verificar se a alteração não foi espúria.
-  valor_LDR = map(analogRead(pino_LDR), 0, 1023, 0, 100); // Le-se o valor do  LDR novamente para confirmar o valor medido.
-  if (valor_LDR < 10){ // Se o valor medido for menor que 10 em uma escala de 0 a 100,
-    periodo_do_dia = 1;   // atualiza-se o periodo_do_dia para noite.
-  }
-  else{ // Caso o valor seja maior que 10,
-    periodo_do_dia = 0; // atualiza-se o periodo_do_dia para manhã.
-  }
+  if(cont_time_para_checar_valor_LDR >2000){ // Espera-se 4 segundos,
+    
+    int valor_LDR = map(analogRead(pino_LDR), 0, 1023, 0, 100); // Le-se o valor do  LDR para verificar se não houve uma alteração espúria.
+    
+    if (valor_LDR > 10){ // Se o valor medido for maior que 10 em uma escala de 0 a 100,
+      periodo_do_dia = 1;   // atualiza-se o periodo_do_dia para noite.
+    }
+    else{ // Caso o valor seja menor que 10,
+      periodo_do_dia = 0; // atualiza-se o periodo_do_dia para manhã.
+    }
+    cont_time_para_checar_valor_LDR = 0;
+  } 
+  
+  
 }
 
 // MAQUINA DE ESTADOS: DIA E NOITE
@@ -233,17 +252,57 @@ void verifica_periodo_do_dia_pelo_LDR(){
 void maq_estados_dia_e_noite(){
   
   // Define-se a maquina de estados do sistema alternando entre os estados "dia" e "noite" de acordo com o valor lido pelo LDR.
-
-  verifica_periodo_do_dia_pelo_LDR(); // Verifica-se em qual período do dia o sistema está aferindo os dados do LDR. 
   
-  if (periodo_do_dia == 1){ // Se o período for noturno, chama-se a maquina 
-    maq_estados_noite();
-  } else{
-    maq_estados_dia();
+  verifica_periodo_do_dia_pelo_LDR(); // Verifica-se o período do dia e se não ouve nenhuma alteração espuría nos valores lidos pelo LDR
+  if (periodo_do_dia == 1){ // Se o período for noturno, 
+    maq_estados_noite(); // chama-se a maquina de estados do período noturno.
+  }else{ // Caso contrário,
+    maq_estados_dia(); //  chama-se a maquina de estados do período diurno
   }
 
   
 }
+
+// MAQUINA DE ESTADOS: NOITE
+
+void maq_estados_noite(){
+  // Define-se a máquina de estados para o sistema no período noturno, no qual os LED amarelo do farol de veiculos,
+  // e o LED vermelho devem estar piscando. 
+  
+   
+  if (estado_noturno == 0){
+    digitalWrite(15, LOW); // LED vermelho para o farol de veiculos apagado.
+    digitalWrite(16, HIGH); // LED amarelo para o farol de veiculos aceso.
+    digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
+    digitalWrite(18, HIGH); // LED vermelho para o farol de pedestres aceso.
+    digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
+    estado_noturno = 1;
+    conta_meio_segundo();
+  }
+  else{
+    digitalWrite(15, LOW); // LED vermelho para o farol de veiculos apagado.
+    digitalWrite(16, LOW); // LED amarelo para o farol de veiculos apagado.
+    digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
+    digitalWrite(18, LOW); // LED vermelho para o farol de pedestres apagado.
+    digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
+    conta_meio_segundo();
+    estado_noturno = 0;
+  }
+
+}
+
+void maq_estados_dia(){
+
+  if (estado_diurno == 0 && botao_pedestre == 0){
+    digitalWrite(15, LOW); // LED vermelho para o farol de veiculos apagado.
+    digitalWrite(16, LOW); // LED amarelo para o farol de veiculos aceso.
+    digitalWrite(17, HIGH); // LED verde para o farol de veiculos apagado.
+    digitalWrite(18, HIGH); // LED vermelho para o farol de pedestres aceso.
+    digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
+
+  }
+}
+
 
 void setup() {
 
@@ -254,14 +313,12 @@ void setup() {
   configura_decodificador(); // CONFIGURA DECODIFICADOR
   configura_seletor_de_display_de_sete_segmentos(); // CONFIGURA SELETOR DE DISPLAY 7 SEGMENTOS
   configura_interrupcao_botao_pedestre();
-  digitalWrite(5, HIGH);
-  digitalWrite(4, LOW);
   sei();
 
 }
 
 void loop() {
-
+  
   maq_estados_dia_e_noite();
 
 }
