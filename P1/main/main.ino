@@ -370,6 +370,8 @@ void maq_estados_dia(){
   if(estado_diurno == 2 && botao_pedestre == 1){ //Estado 3
     maq_estados_dia_estado_3(); // Chama-se a maquina de estados para o estado 3.
     estado_diurno = 0;
+    digitalWrite(pino_seletor_display_pedestres, HIGH); // Desativa o display de pedestres.
+    digitalWrite(pino_seletor_display_veiculos, HIGH); // Desativa o display de veiculos.
     sub_estado_2 = 0;
     sub_estado_3 = 0;
     botao_pedestre = 0;
@@ -424,7 +426,7 @@ void maq_estados_dia_estado_2(){
 void maq_estados_dia_estado_3(){
   
 
-  if (sub_estado_3 == 0){ // Sub estado 0: Mostrar a contagem "9" para display dos carros e "5" para o display de pedestres.
+  if (sub_estado_3 == 0){ // Sub estado 0: Mostrar a contagem "4" para display dos carros e "0" piscando para o display de pedestres.
 
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(16, LOW); // LED amarelo para o farol de veiculos apagado.
@@ -436,7 +438,7 @@ void maq_estados_dia_estado_3(){
     conta_500ms();
     sub_estado_3 = 1;
   }
-  if (sub_estado_3 == 1){ // Sub estado 1: Mostrar a contagem "8" para display dos carros e "4" para o display de pedestres.
+  if (sub_estado_3 == 1){ // Sub estado 1:  Mostrar a contagem "4" para display dos carros e "0" piscando para o display de pedestres.
     
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(16, LOW); // LED amarelo para o farol de veiculos apagado.
@@ -448,7 +450,7 @@ void maq_estados_dia_estado_3(){
     conta_500ms();
     sub_estado_3 = 2;
   }
-   if (sub_estado_3 == 2){ // Sub estado 0: Mostrar a contagem "9" para display dos carros e "5" para o display de pedestres.
+   if (sub_estado_3 == 2){ // Sub estado 2:  Mostrar a contagem "3" para display dos carros e "0" piscando para o display de pedestres.
 
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(16, LOW); // LED amarelo para o farol de veiculos apagado.
@@ -461,7 +463,7 @@ void maq_estados_dia_estado_3(){
     sub_estado_3 = 3;
   }
 
-  if (sub_estado_3 == 3){ // Sub estado 1: Mostrar a contagem "8" para display dos carros e "4" para o display de pedestres.
+  if (sub_estado_3 == 3){ // Sub estado 3: Mostrar a contagem "3" para display dos carros e "0" piscando para o display de pedestres.
     
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(16, LOW); // LED amarelo para o farol de veiculos apagado.
@@ -474,7 +476,7 @@ void maq_estados_dia_estado_3(){
     sub_estado_3 = 4;
     }
 
-  if (sub_estado_3 == 4){ // Sub estado 0: Mostrar a contagem "9" para display dos carros e "5" para o display de pedestres.
+  if (sub_estado_3 == 4){ // Sub estado 4: Mostrar a contagem "2" para display dos carros e "0" piscando para o display de pedestres.
 
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(16, LOW); // LED amarelo para o farol de veiculos apagado.
@@ -487,7 +489,7 @@ void maq_estados_dia_estado_3(){
     sub_estado_3 = 5;
   }
 
-   if (sub_estado_3 == 5){ // Sub estado 1: Mostrar a contagem "8" para display dos carros e "4" para o display de pedestres.
+   if (sub_estado_3 == 5){ // Sub estado 5: Mostrar a contagem "2" para display dos carros e "0" piscando para o display de pedestres.
     
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(16, LOW); // LED amarelo para o farol de veiculos apagado.
@@ -500,7 +502,7 @@ void maq_estados_dia_estado_3(){
     sub_estado_3 = 6;
     }
 
-  if (sub_estado_3 == 6){ // Sub estado 0: Mostrar a contagem "9" para display dos carros e "5" para o display de pedestres.
+  if (sub_estado_3 == 6){ // Sub estado 6: Mostrar a contagem "1" para display dos carros e "0" piscando para o display de pedestres.
 
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(16, LOW); // LED amarelo para o farol de veiculos apagado.
@@ -513,7 +515,7 @@ void maq_estados_dia_estado_3(){
     sub_estado_3 = 7;
   }
 
-  if (sub_estado_3 == 7){ // Sub estado 1: Mostrar a contagem "8" para display dos carros e "4" para o display de pedestres.
+  if (sub_estado_3 == 7){ // Sub estado 7: Mostrar a contagem "1" para display dos carros e "0" piscando para o display de pedestres.
     
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(16, LOW); // LED amarelo para o farol de veiculos apagado.
@@ -526,7 +528,7 @@ void maq_estados_dia_estado_3(){
     sub_estado_3 = 8;
     }
 
-  if (sub_estado_3 == 8){ // Sub estado 0: Mostrar a contagem "9" para display dos carros e "5" para o display de pedestres.
+  if (sub_estado_3 == 8){ // Sub estado 8: Mostrar a contagem "0" para display dos carros e "0" piscando para o display de pedestres.
 
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(16, LOW); // LED amarelo para o farol de veiculos apagado.
@@ -539,7 +541,7 @@ void maq_estados_dia_estado_3(){
     sub_estado_3 = 9;
   }
 
-  if (sub_estado_3 == 9){ // Sub estado 1: Mostrar a contagem "8" para display dos carros e "4" para o display de pedestres.
+  if (sub_estado_3 == 9){ // Sub estado 9: Mostrar a contagem "0" para display dos carros e "0" piscando para o display de pedestres.
     
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(16, LOW); // LED amarelo para o farol de veiculos apagado.
