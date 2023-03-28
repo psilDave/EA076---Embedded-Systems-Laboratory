@@ -16,6 +16,8 @@ volatile unsigned int periodo_do_dia  = 0;
 // Valores possíveis: "0" - LEDs ligados | "1" - LEDs desligados.
 volatile unsigned int estado_noturno = 1;
 
+volatile unsigned int display_selecionado = 0;
+
 // Define o estado da maquina de estados diurna.
 // Valores possíveis: "0" - Semaforo aberto para os carros, semaforo fechado para pedestres e displays desligados.
 //                    "1" - Semaforo fechando para os carros, semaforo fechado para os pedestres e displays desligados.
@@ -134,7 +136,7 @@ void configura_seletor_de_display_de_sete_segmentos(){
 
 ISR(TIMER0_COMPA_vect){
   cont++;
-  cont_time_para_checar_valor_LDR++;  
+  cont_time_para_checar_valor_LDR++;
 }
 
 ISR(PCINT2_vect){
@@ -142,28 +144,9 @@ ISR(PCINT2_vect){
   
   if(digitalRead(pino_botao_pedestre) == 1){ // Verifica-se nivel alto no pino da interrupção para indicar que o botão do pedestre foi acionado.
     botao_pedestre = 1; // Indica-se que o botão do pedestre foi selecionado.
-    cont = 0; // Inicia-se a contagem do tempo para  
+    cont = 0; // Inicia-se a contagem do tempo para quando o pedestre solicitar a parada. 
   }
-  
-}
 
-// TIMERS 
-
-void conta_1000ms(){
-  // Contador de 1 segundo utilizando as interrupções periodicas geradas pelo timer.
-  cont = 0;
-  while(cont < 500){}
-}
-void conta_500ms(){
-  // Contador de 0.5 segundos utilizando as interrupções periodicas geradas pelo timer.
-  cont = 0;
-  while(cont < 250){}
-
-}
-void conta_100ms(){
-  // Contador de 3 segundos utilizando as interrupções periodicas geradas pelo timer.
-  cont = 0;
-  while(cont < 50){}
 }
 
 // VALORES DO DISPLAY DE 7 SEGMENTOS
@@ -271,8 +254,8 @@ void verifica_periodo_do_dia_pelo_LDR(){
 }
 
 // FUNÇÃO QUE SELECIONA O DISPLAY QUE DEVE MOSTRAR O DIGITO SOLICITADO.
-
-void mostra_digito_no_display_selecionado(int display_selecionado, int digito){ 
+// (ARRUMAR)
+void mostra_digito_no_display_selecionado(int digito){ 
   // Define qual display deve mostrar o digito requerido.
 
   switch(display_selecionado){
@@ -298,12 +281,12 @@ void maq_estados_dia_e_noite(){
   
   verifica_periodo_do_dia_pelo_LDR(); // Verifica-se o período do dia e se não ouve nenhuma alteração espuría nos valores lidos pelo LDR
   if (periodo_do_dia == 1){ // Se o período for noturno, 
+    PCMSK2 &= 0b00000000; // Desabilita PCINT22 como entrada para receber a interrupção quando nivel ALTO (HIGH) for identificado.
     maq_estados_noite(); // chama-se a maquina de estados do período noturno.
   }else{ // Caso contrário,
+    PCMSK2 |= 0b01000000; // Habilita PCINT22 como entrada para receber a interrupção quando nivel ALTO (HIGH) for identificado.
     maq_estados_dia(); //  chama-se a maquina de estados do período diurno.
   }
-
-  
 }
 
 // MAQUINA DE ESTADOS: NOITE
@@ -312,27 +295,28 @@ void maq_estados_noite(){
   // Define-se a máquina de estados para o sistema no período noturno, no qual os LED amarelo do farol de veiculos,
   // e o LED vermelho devem estar piscando. 
   
-  botao_pedestre = 0; //  Desativa o funcionamento do botao do pedestre.
-  if (estado_noturno == 0){
+  if (estado_noturno == 0 && cont < 500){
     digitalWrite(15, LOW); // LED vermelho para o farol de veiculos apagado.
     digitalWrite(16, HIGH); // LED amarelo para o farol de veiculos aceso.
     digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
     digitalWrite(18, HIGH); // LED vermelho para o farol de pedestres aceso.
     digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
-    estado_noturno = 1;
-    conta_500ms();
-  }
-  else{
+    estado_noturno = 1;}
+  
+  if (estado_noturno == 1 && cont >= 500){
     digitalWrite(15, LOW); // LED vermelho para o farol de veiculos apagado.
     digitalWrite(16, LOW); // LED amarelo para o farol de veiculos apagado.
     digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
     digitalWrite(18, LOW); // LED vermelho para o farol de pedestres apagado.
     digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
-    conta_500ms();
     estado_noturno = 0;
   }
 
-}
+  if (cont >1000){
+    cont = 0;
+  }
+
+  }
 
 // MAQUINA DE ESTADOS: DIA
 
@@ -348,26 +332,21 @@ void maq_estados_dia(){
     digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
   }
 
-  if (botao_pedestre == 1 && estado_diurno == 0) { // Estado 1
-    conta_100ms();
+  if (botao_pedestre == 1 && estado_diurno == 0 && cont > 50) { // Estado 1
     digitalWrite(15, LOW); // LED vermelho para o farol de veiculos apagado.
     digitalWrite(16, HIGH); // LED amarelo para o farol de veiculos aceso.
     digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
     digitalWrite(18, HIGH); // LED vermelho para o farol de pedestres aceso.
     digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
-    // Espera-se 3 segundos para fechar o sinal dos carros e abrir o sinal dos pedestres.
-    conta_1000ms();
-    conta_1000ms();
-    conta_1000ms();
     estado_diurno = 1;
   }
 
-  if (estado_diurno == 1 && botao_pedestre == 1){ // Estado 2
+  if (estado_diurno == 1 && botao_pedestre == 1 && cont > 1550){ // Estado 2
     maq_estados_dia_estado_2(); // Chama-se a maquina de estados para o estado 2.
     estado_diurno = 2;
   }
 
-  if(estado_diurno == 2 && botao_pedestre == 1){ //Estado 3
+  if(estado_diurno == 2 && botao_pedestre == 1 && cont > 3551){ //Estado 3
     maq_estados_dia_estado_3(); // Chama-se a maquina de estados para o estado 3.
     estado_diurno = 0;
     digitalWrite(pino_seletor_display_pedestres, HIGH); // Desativa o display de pedestres.
@@ -379,7 +358,7 @@ void maq_estados_dia(){
 }
 
 // MAQUINA DE ESTADOS: ESTADO 2 DO DIA
-
+// (ARRUMAR)
 void maq_estados_dia_estado_2(){
   // Define-se a maquina de estados para o estado 2 da maquina de estados do sistma diurno.
 
@@ -389,40 +368,48 @@ void maq_estados_dia_estado_2(){
   digitalWrite(18, LOW); // LED vermelho para o farol de pedestres apagado.
   digitalWrite(19, HIGH); // LED verde para o farol de pedestres aceso.
 
-  if (sub_estado_2 == 0){ // Sub estado 0: Mostrar a contagem "9" para display dos carros e "5" para o display de pedestres.
+  if (sub_estado_2 == 0 && cont > 1550){ // Sub estado 0: Mostrar a contagem "9" para display dos carros e "5" para o display de pedestres.
 
-    mostra_digito_no_display_selecionado(pino_seletor_display_veiculos, 9);
-    mostra_digito_no_display_selecionado(pino_seletor_display_pedestres, 5);
-    conta_1000ms();
+    mostra_digito_no_display_selecionado(9);
+    mostra_digito_no_display_selecionado(5);
+    
+  if(cont == 2049){
     sub_estado_2 = 1;
   }
-  if (sub_estado_2 == 1){ // Sub estado 1: Mostrar a contagem "8" para display dos carros e "4" para o display de pedestres.
-    mostra_digito_no_display_selecionado(pino_seletor_display_veiculos, 8);
-    mostra_digito_no_display_selecionado(pino_seletor_display_pedestres, 4);
-    conta_1000ms();
+
+  }
+  if (sub_estado_2 == 1 && cont > 2050){ // Sub estado 1: Mostrar a contagem "8" para display dos carros e "4" para o display de pedestres.
+    mostra_digito_no_display_selecionado(8);
+    mostra_digito_no_display_selecionado(4);
+    
+  if(cont == 2549){
     sub_estado_2 = 2;
   }
-  if (sub_estado_2 == 2) { // Sub estado 2: Mostrar a contagem "7" para display dos carros e "3" para o display de pedestres.
-    mostra_digito_no_display_selecionado(pino_seletor_display_veiculos, 7);
-    mostra_digito_no_display_selecionado(pino_seletor_display_pedestres, 3);
-    conta_1000ms();
-    sub_estado_2 = 3;
+
   }
-  if (sub_estado_2 == 3) { // Sub estado 3: Mostrar a contagem "6" para display dos carros e "2" para o display de pedestres.
-    mostra_digito_no_display_selecionado(pino_seletor_display_veiculos, 6);
-    mostra_digito_no_display_selecionado(pino_seletor_display_pedestres, 2);
-    conta_1000ms();
+  if (sub_estado_2 == 2 && cont > 2550) { // Sub estado 2: Mostrar a contagem "7" para display dos carros e "3" para o display de pedestres.
+    mostra_digito_no_display_selecionado(7);
+    mostra_digito_no_display_selecionado(3);
+    
+  if(cont == 3049){
+      sub_estado_2 = 3;
+    }
+  }
+  if (sub_estado_2 == 3 && cont > 3050) { // Sub estado 3: Mostrar a contagem "6" para display dos carros e "2" para o display de pedestres.
+    mostra_digito_no_display_selecionado(6);
+    mostra_digito_no_display_selecionado(2);
+  if(cont == 3549){
     sub_estado_2 = 4;
   }
-  if (sub_estado_2 == 4) { // Sub estado 4: Mostrar a contagem "5" para display dos carros e "1" para o display de pedestres.
-    mostra_digito_no_display_selecionado(pino_seletor_display_veiculos, 5);
-    mostra_digito_no_display_selecionado(pino_seletor_display_pedestres, 1);
-    conta_1000ms();
+  }
+  if (sub_estado_2 == 4 && cont > 3550) { // Sub estado 4: Mostrar a contagem "5" para display dos carros e "1" para o display de pedestres.
+    mostra_digito_no_display_selecionado(5);
+    mostra_digito_no_display_selecionado(1);
   }
 }
 
 // MAQUINA DE ESTADOS: ESTADO 3 DO DIA
-
+// (ARRUMAR)
 void maq_estados_dia_estado_3(){
   
 
@@ -433,8 +420,8 @@ void maq_estados_dia_estado_3(){
     digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
     digitalWrite(18, LOW); // LED vermelho para o farol de pedestres apagado.
     digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
-    mostra_digito_no_display_selecionado(pino_seletor_display_veiculos, 4);  
-    mostra_digito_no_display_selecionado(pino_seletor_display_pedestres, 10);
+    mostra_digito_no_display_selecionado(4);  
+    mostra_digito_no_display_selecionado(10);
     conta_500ms();
     sub_estado_3 = 1;
   }
@@ -445,8 +432,8 @@ void maq_estados_dia_estado_3(){
     digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
     digitalWrite(18, HIGH); // LED vermelho para o farol de pedestres aceso.
     digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
-    mostra_digito_no_display_selecionado(pino_seletor_display_veiculos, 4);  
-    mostra_digito_no_display_selecionado(pino_seletor_display_pedestres, 0);
+    mostra_digito_no_display_selecionado(4);  
+    mostra_digito_no_display_selecionado(0);
     conta_500ms();
     sub_estado_3 = 2;
   }
@@ -457,8 +444,8 @@ void maq_estados_dia_estado_3(){
     digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
     digitalWrite(18, LOW); // LED vermelho para o farol de pedestres apagado.
     digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
-    mostra_digito_no_display_selecionado(pino_seletor_display_veiculos, 3);  
-    mostra_digito_no_display_selecionado(pino_seletor_display_pedestres, 10);
+    mostra_digito_no_display_selecionado(3);  
+    mostra_digito_no_display_selecionado(10);
     conta_500ms();
     sub_estado_3 = 3;
   }
@@ -470,8 +457,8 @@ void maq_estados_dia_estado_3(){
     digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
     digitalWrite(18, HIGH); // LED vermelho para o farol de pedestres aceso.
     digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
-    mostra_digito_no_display_selecionado(pino_seletor_display_veiculos, 3);  
-    mostra_digito_no_display_selecionado(pino_seletor_display_pedestres, 0);
+    mostra_digito_no_display_selecionado(3);  
+    mostra_digito_no_display_selecionado(0);
     conta_500ms();
     sub_estado_3 = 4;
     }
@@ -483,8 +470,8 @@ void maq_estados_dia_estado_3(){
     digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
     digitalWrite(18, LOW); // LED vermelho para o farol de pedestres apagado.
     digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
-    mostra_digito_no_display_selecionado(pino_seletor_display_veiculos, 2);  
-    mostra_digito_no_display_selecionado(pino_seletor_display_pedestres, 10);
+    mostra_digito_no_display_selecionado(2);  
+    mostra_digito_no_display_selecionado(10);
     conta_500ms();
     sub_estado_3 = 5;
   }
@@ -496,8 +483,8 @@ void maq_estados_dia_estado_3(){
     digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
     digitalWrite(18, HIGH); // LED vermelho para o farol de pedestres aceso.
     digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
-    mostra_digito_no_display_selecionado(pino_seletor_display_veiculos, 2);  
-    mostra_digito_no_display_selecionado(pino_seletor_display_pedestres, 0);
+    mostra_digito_no_display_selecionado(2);  
+    mostra_digito_no_display_selecionado(0);
     conta_500ms();
     sub_estado_3 = 6;
     }
@@ -509,8 +496,8 @@ void maq_estados_dia_estado_3(){
     digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
     digitalWrite(18, LOW); // LED vermelho para o farol de pedestres apagado.
     digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
-    mostra_digito_no_display_selecionado(pino_seletor_display_veiculos, 1);  
-    mostra_digito_no_display_selecionado(pino_seletor_display_pedestres, 10);
+    mostra_digito_no_display_selecionado(1);  
+    mostra_digito_no_display_selecionado(10);
     conta_500ms();
     sub_estado_3 = 7;
   }
@@ -522,8 +509,8 @@ void maq_estados_dia_estado_3(){
     digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
     digitalWrite(18, HIGH); // LED vermelho para o farol de pedestres aceso.
     digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
-    mostra_digito_no_display_selecionado(pino_seletor_display_veiculos, 1);  
-    mostra_digito_no_display_selecionado(pino_seletor_display_pedestres, 0);
+    mostra_digito_no_display_selecionado(1);  
+    mostra_digito_no_display_selecionado(0);
     conta_500ms();
     sub_estado_3 = 8;
     }
@@ -535,8 +522,8 @@ void maq_estados_dia_estado_3(){
     digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
     digitalWrite(18, LOW); // LED vermelho para o farol de pedestres apagado.
     digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
-    mostra_digito_no_display_selecionado(pino_seletor_display_veiculos, 0);  
-    mostra_digito_no_display_selecionado(pino_seletor_display_pedestres, 10);
+    mostra_digito_no_display_selecionado(0);  
+    mostra_digito_no_display_selecionado(10);
     conta_500ms();
     sub_estado_3 = 9;
   }
@@ -548,8 +535,8 @@ void maq_estados_dia_estado_3(){
     digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
     digitalWrite(18, HIGH); // LED vermelho para o farol de pedestres aceso.
     digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
-    mostra_digito_no_display_selecionado(pino_seletor_display_veiculos, 0);  
-    mostra_digito_no_display_selecionado(pino_seletor_display_pedestres, 0);
+    mostra_digito_no_display_selecionado(0);  
+    mostra_digito_no_display_selecionado(0);
     conta_500ms();
     }
 
