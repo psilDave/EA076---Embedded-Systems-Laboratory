@@ -22,28 +22,18 @@ volatile unsigned int estado_noturno = 1;
 volatile unsigned int display_selecionado = 0;
 
 // Define o estado da maquina de estados diurna.
-// Valores possíveis: "0" - Semaforo aberto para os carros, semaforo fechado para pedestres e displays desligados.
-//                    "1" - Semaforo fechando para os carros, semaforo fechado para os pedestres e displays desligados.
-//                    "2" - Semaforo fechado para os carros, semaforo aberto para os pedestres, displays ligados e contando o tempo restante para travessia dos pedestres.
-//                    "3" - Semaforo fechado para os carros, semaforo piscando vermelho para pedestres, displays ligados,de forma que o display dos carros está contando e do pedestre piscando com o numero "0". 
+// Valores possíveis: "1" - Semaforo aberto para os carros, semaforo fechado para pedestres e displays desligados.
+//                    "2" - Semaforo fechando para os carros, semaforo fechado para os pedestres e displays desligados.
+//                    "3" - Semaforo fechado para os carros, semaforo aberto para os pedestres, displays ligados e contando o tempo restante para travessia dos pedestres.
+//                    "4" - Semaforo fechado para os carros, semaforo piscando vermelho para pedestres, displays ligados,de forma que o display dos carros está contando e do pedestre piscando com o numero "0". 
 
 volatile unsigned int estado_diurno = 1;
 
 
-// Define o sub estado 2 da maquina de estados do estado 2 da maquina de estados diurna.
-// Valores possíveis: "0"
-//                    "1"
-//                    "2"
-//                    "3" 
-
+// Define o sub estado 2 da maquina de estados do estado 3 da maquina de estados diurna.
 volatile unsigned int sub_estado_2 = 0;
 
-// Define o sub estado 3 da maquina de estados do estado 3 da maquina de estados diurna.
-// Valores possíveis: "0"
-//                    "1"
-//                    "2"
-//                    "3" 
-
+// Define o sub estado 3 da maquina de estados do estado 4 da maquina de estados diurna.
 volatile unsigned int sub_estado_3 = 0; 
 
 // Pinos chamados no código várias vezes e que tem um sentido semantico importante em suas chamadas.
@@ -269,7 +259,6 @@ void verifica_periodo_do_dia_pelo_LDR(){
 }
 
 // FUNÇÃO QUE SELECIONA O DISPLAY QUE DEVE MOSTRAR O DIGITO SOLICITADO.
-// (ARRUMAR)
 
 void mostra_digito_no_display_selecionado(int display, int digito_d1, int digito_d2){ 
   // Define qual display deve mostrar o digito requerido.
@@ -337,7 +326,7 @@ void maq_estados_noite(){
 void maq_estados_dia(){
   // Define-se a maquina de estados para o sistema no período diurno.
 
-  if (botao_pedestre == 0 && estado_diurno == 1){ // Estado 0 
+  if (botao_pedestre == 0 && estado_diurno == 1){ // Estado 1 
 
     digitalWrite(15, LOW); // LED vermelho para o farol de veiculos apagado.
     digitalWrite(16, LOW); // LED amarelo para o farol de veiculos apagado.
@@ -346,7 +335,7 @@ void maq_estados_dia(){
     digitalWrite(19, LOW); // LED verde para o farol de pedestres apagado.
   }
 
-  if (botao_pedestre == 1 && estado_diurno == 1 && cont > 50) { // Estado 1
+  if (botao_pedestre == 1 && estado_diurno == 1 && cont > 50) { // Estado 2
     digitalWrite(15, LOW); // LED vermelho para o farol de veiculos apagado.
     digitalWrite(16, HIGH); // LED amarelo para o farol de veiculos aceso.
     digitalWrite(17, LOW); // LED verde para o farol de veiculos apagado.
@@ -358,13 +347,13 @@ void maq_estados_dia(){
     }
   }
 
-  if (estado_diurno == 2 && botao_pedestre == 1 && cont > 1550){ // Estado 2
-    maq_estados_dia_estado_2(); // Chama-se a maquina de estados para o estado 2.
+  if (estado_diurno == 2 && botao_pedestre == 1 && cont > 1550){ // Estado 3
+    maq_estados_dia_estado_3(); // Chama-se a maquina de estados para o estado 3.
     
   }
 
-  if(estado_diurno == 3 && botao_pedestre == 1 && cont > 3800){ //Estado 3
-    maq_estados_dia_estado_3(); // Chama-se a maquina de estados para o estado 3.
+  if(estado_diurno == 3 && botao_pedestre == 1 && cont > 3800){ // Estado 4
+    maq_estados_dia_estado_4(); // Chama-se a maquina de estados para o estado 4.
     if (cont == 6300){
       sub_estado_2 = 0;
       sub_estado_3 = 0;
@@ -376,9 +365,9 @@ void maq_estados_dia(){
   }
 }
 
-// MAQUINA DE ESTADOS: ESTADO 2 DO DIA
-// (ARRUMAR)
-void maq_estados_dia_estado_2(){
+// MAQUINA DE ESTADOS: ESTADO 3 DO DIA
+
+void maq_estados_dia_estado_3(){
   // Define-se a maquina de estados para o estado 2 da maquina de estados do sistma diurno.
 
   digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
@@ -430,12 +419,12 @@ void maq_estados_dia_estado_2(){
   }
 }
 
-// MAQUINA DE ESTADOS: ESTADO 3 DO DIA
-// (ARRUMAR)
-void maq_estados_dia_estado_3(){
+// MAQUINA DE ESTADOS: ESTADO 4 DO DIA
+
+void maq_estados_dia_estado_4(){
   
 
-  if (sub_estado_3 == 0 && cont > 4050){ // Sub estado 0: Mostrar a contagem "4" para display dos carros e "0" piscando para o display de pedestres.
+  if (sub_estado_3 == 0 && cont > 4050){ // Sub estado 1 Mostrar a contagem "4" para display dos carros e "0" piscando para o display de pedestres.
 
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(18, HIGH); // LED vermelho para o farol de pedestres aceso.
@@ -445,7 +434,7 @@ void maq_estados_dia_estado_3(){
     }
     
   }
-  if (sub_estado_3 == 1 && cont > 4300){ // Sub estado 1:  Mostrar a contagem "4" para display dos carros e "0" piscando para o display de pedestres.
+  if (sub_estado_3 == 1 && cont > 4300){ // Sub estado 2:  Mostrar a contagem "4" para display dos carros e "0" piscando para o display de pedestres.
     
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(18, LOW); // LED vermelho para o farol de pedestres apagado.
@@ -455,7 +444,7 @@ void maq_estados_dia_estado_3(){
     }
     
   }
-   if (sub_estado_3 == 2 && cont > 4550){ // Sub estado 2:  Mostrar a contagem "3" para display dos carros e "0" piscando para o display de pedestres.
+   if (sub_estado_3 == 2 && cont > 4550){ // Sub estado 3:  Mostrar a contagem "3" para display dos carros e "0" piscando para o display de pedestres.
 
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(18, HIGH); // LED vermelho para o farol de pedestres aceso.
@@ -466,7 +455,7 @@ void maq_estados_dia_estado_3(){
     
   }
 
-  if (sub_estado_3 == 3 && cont > 4800){ // Sub estado 3: Mostrar a contagem "3" para display dos carros e "0" piscando para o display de pedestres.
+  if (sub_estado_3 == 3 && cont > 4800){ // Sub estado 4: Mostrar a contagem "3" para display dos carros e "0" piscando para o display de pedestres.
     
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso
     digitalWrite(18, LOW); // LED vermelho para o farol de pedestres apagado.
@@ -476,7 +465,7 @@ void maq_estados_dia_estado_3(){
     } 
     }
 
-  if (sub_estado_3 == 4 && cont > 5050){ // Sub estado 4: Mostrar a contagem "2" para display dos carros e "0" piscando para o display de pedestres.
+  if (sub_estado_3 == 4 && cont > 5050){ // Sub estado 5: Mostrar a contagem "2" para display dos carros e "0" piscando para o display de pedestres.
 
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(18, HIGH); // LED vermelho para o farol de pedestres aceso.
@@ -487,7 +476,7 @@ void maq_estados_dia_estado_3(){
     }
   }
 
-   if (sub_estado_3 == 5 && cont > 5300){ // Sub estado 5: Mostrar a contagem "2" para display dos carros e "0" piscando para o display de pedestres.
+   if (sub_estado_3 == 5 && cont > 5300){ // Sub estado 6: Mostrar a contagem "2" para display dos carros e "0" piscando para o display de pedestres.
     
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(18, LOW); // LED vermelho para o farol de pedestres apagado.
@@ -498,7 +487,7 @@ void maq_estados_dia_estado_3(){
     }
     }
 
-  if (sub_estado_3 == 6 && cont > 5550){ // Sub estado 6: Mostrar a contagem "1" para display dos carros e "0" piscando para o display de pedestres.
+  if (sub_estado_3 == 6 && cont > 5550){ // Sub estado 7: Mostrar a contagem "1" para display dos carros e "0" piscando para o display de pedestres.
 
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(18, HIGH); // LED vermelho para o farol de pedestres aceso.
@@ -508,7 +497,7 @@ void maq_estados_dia_estado_3(){
     }
   }
 
-  if (sub_estado_3 == 7 && cont > 5800){ // Sub estado 7: Mostrar a contagem "1" para display dos carros e "0" piscando para o display de pedestres.
+  if (sub_estado_3 == 7 && cont > 5800){ // Sub estado 8: Mostrar a contagem "1" para display dos carros e "0" piscando para o display de pedestres.
     
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(18, LOW); // LED vermelho para o farol de pedestres apagado.
@@ -519,7 +508,7 @@ void maq_estados_dia_estado_3(){
 
     }
 
-  if (sub_estado_3 == 8 && cont > 6050){ // Sub estado 8: Mostrar a contagem "0" para display dos carros e "0" piscando para o display de pedestres.
+  if (sub_estado_3 == 8 && cont > 6050){ // Sub estado 9: Mostrar a contagem "0" para display dos carros e "0" piscando para o display de pedestres.
 
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(18, HIGH); // LED vermelho para o farol de pedestres aceso.
@@ -528,7 +517,7 @@ void maq_estados_dia_estado_3(){
     sub_estado_3 = 9;
   }
 
-  if (sub_estado_3 == 9 && cont > 6300){ // Sub estado 9: Mostrar a contagem "0" para display dos carros e "0" piscando para o display de pedestres.
+  if (sub_estado_3 == 9 && cont > 6300){ // Sub estado 10: Mostrar a contagem "0" para display dos carros e "0" piscando para o display de pedestres.
     
     digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
     digitalWrite(18, LOW); // LED vermelho para o farol de pedestres apagado.
