@@ -147,7 +147,7 @@ void configura_seletor_de_display_de_sete_segmentos(){
 
 // ROTINAS DE SERVIÇO DE INTERRUPÇÃO
 
-//ROTINA DE INTERRUPÇÕES PERIÓDICAS DE 2ms. 
+// ROTINA DE INTERRUPÇÕES PERIÓDICAS DE 2ms. 
 
 ISR(TIMER0_COMPA_vect){
 
@@ -183,7 +183,7 @@ void atualizacao_dos_displays(){
     display_selecionado = 0; // seleciona-se o display de carros.
   }
   cont_time_display = 0; // E por fim, reseta-se o contador para realizar uma nova atualização após 8 ms.
-}
+  }
 }
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -312,7 +312,6 @@ void mostra_digito_no_display_selecionado(int display, int digito_d1, int digito
 }
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 
 // MÁQUINAS DE ESTADO
 
