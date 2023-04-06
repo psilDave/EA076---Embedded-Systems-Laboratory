@@ -15,7 +15,7 @@ volatile unsigned int cont = 0;
 volatile unsigned int cont_time_para_checar_valor_LDR = 0;
 
 // Variável utilizada para contar quantas interrupções períodiicas geradas pelo timer são necessárias
-// para realizar a transição do display que deve mostrar a contagem de tempo. Esse tempo define o refrash rate dos displays para que
+// para realizar a transição do display que deve mostrar a contagem de tempo. Esse tempo define o refresh rate dos displays para que
 // a transição não seja perceptivel aos olhos.
 volatile unsigned int cont_time_display = 0;
 
@@ -155,8 +155,8 @@ ISR(TIMER0_COMPA_vect){
 
   cont++; // Incrementa-se a quantidade de interrupções a cada 2 ms para realizar a troca de estados das Máquinas de Estado 2 e 3.
   cont_time_para_checar_valor_LDR++; // Incrementa-se a quantidade de interrupções a cada 2 ms para realizar a checagem do valor do LDR.
-  cont_time_display++; // Incrementa-se a quantidade de interrupções a cada 2 ms para definir o refrash rate do conjunto de displays.
-  atualizacao_dos_displays(); // Atualiza-se o display que deve mostrar a contagem para um refrash rate já definido de 125 Hz.
+  cont_time_display++; // Incrementa-se a quantidade de interrupções a cada 2 ms para definir o refresh rate do conjunto de displays.
+  atualizacao_dos_displays(); // Atualiza-se o display que deve mostrar a contagem para um refresh rate já definido de 125 Hz.
 }
 
  // ROTINA DE INTERRUPÇÃO PARA BOTÃO DO PEDESTRE
@@ -173,7 +173,7 @@ ISR(PCINT2_vect){
 // FUNÇÃO UTIL PARA REALIZAR A ATUALIZAÇÃO DOS DISPLAYS 
 
 void atualizacao_dos_displays(){
-  // Função util das rotinas de interrupção para atualizar o display que deve mostrar a contagem para um refrash rate de 125 Hz.
+  // Função util das rotinas de interrupção para atualizar o display que deve mostrar a contagem para um refresh rate de 125 Hz.
 
   if (cont_time_display > 4 ){ // Verifica se passaram 8ms para realizar a atualização do display que deve mostrar a contagem,
     if (display_selecionado == 0){ // Verifica se display que está selecionado é o dos carros 
@@ -193,7 +193,7 @@ void atualizacao_dos_displays(){
 // VALORES DO DISPLAY DE 7 SEGMENTOS
 
 void conversor_decimal_binario_para_display_7_segmentos(int valor_decimal){
-  // Converte valores decimais para binário para serem utilizados no decodificador do display de 7 segmentos CD4511.
+  // Converte valor decimal para binário para ser utilizados no decodificador do display de 7 segmentos CD4511.
 
   switch (valor_decimal) {
     case 0: // Número 0 : 
@@ -319,7 +319,7 @@ void mostra_digito_no_display_selecionado(int display, int digito_d1, int digito
 
 void maq_estados_dia_e_noite(){
   
-  // Define-se a Máquina de Estados do sistema alternando entre os estados "dia" e "noite" de acordo com o valor lido pelo LDR.
+  // Define-se a Máquina de Estados do sistema alternando entre os estados "Sistema Diurno" e "Sistema Noturno" de acordo com o valor lido pelo LDR.
   
   verifica_periodo_do_dia_pelo_LDR(); // Verifica-se o período do dia e se não ouve nenhuma alteração espuría nos valores lidos pelo LDR
   if (periodo_do_dia == 1){ // Se o período for noturno, 
@@ -334,7 +334,7 @@ void maq_estados_dia_e_noite(){
 // MAQUINA DE ESTADOS 2: Sistema Noturno
 
 void maq_estados_noite(){
-  // Define-se a máquina de estados para o sistema no período noturno, no qual os LED amarelo do farol de veiculos,
+  // Define-se a máquina de estados para o sistema no período noturno, no qual o LED amarelo do farol de veiculos,
   // e o LED vermelho devem estar piscando. 
   
   if (estado_noturno == 0 && cont < 250){ // Se os LEDs estiverem apagados e o tempo for menor que 0.5 s, tem-se: 
@@ -365,7 +365,7 @@ void maq_estados_noite(){
 // MAQUINA DE ESTADOS 3: Sistema Diurno
 
 void maq_estados_dia(){
-  // Define-se a maquina de estados para o sistema no período diurno.
+  // Define-se a Máquina de Estados 3 para o sistema no período diurno
 
   if (botao_pedestre == 0 && estado_diurno == 1){ // Estado 1 
 
@@ -409,7 +409,7 @@ void maq_estados_dia(){
 // MAQUINA DE ESTADOS 4: Estado 3 do Sistema Diurno
 
 void maq_estados_dia_estado_3(){
-  // Define-se a maquina de estados para o estado 2 da maquina de estados do sistma diurno.
+  // Define-se a Máquina de Estados 4 para modelar o estado 2 do sistema diurno.
 
   digitalWrite(15, HIGH); // LED vermelho para o farol de veiculos aceso.
   digitalWrite(16, LOW); // LED amarelo para o farol de veiculos apagado.
@@ -463,7 +463,7 @@ void maq_estados_dia_estado_3(){
 // MAQUINA DE ESTADOS 5: Estado 4 do Sistema Diurno
 
 void maq_estados_dia_estado_4(){
-  
+  // Define-se a Máquina de estados 5 para modelar o estado 4 do sistema diurno.
 
   if (sub_estado_3 == 0 && cont > 4050){ // Sub estado 1 Mostrar a contagem "4" para display dos carros e "0" piscando para o display de pedestres.
 
