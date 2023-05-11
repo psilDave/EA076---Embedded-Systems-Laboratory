@@ -1,9 +1,23 @@
+String comando = "";
+bool comandoCompleto = false;
+
+void serialEvent(){
+  while(Serial.available()){
+    char inChar = (char)Serial.read();
+    comando += inChar;
+
+    if inChar
+  }
+}
+
+
 void setup() {
-  // put your setup code here, to run once:
+  Serial.begin(9600);
 
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  recebeComando();
+  Serial.println(comando);
 
 }
