@@ -14,12 +14,48 @@ String comando;
 
 volatile bool erro = false;
 
+// 
+
+volatile unsigned int velocidade_do_motor = 0;
+
+// 
+
+volatile unsigned int cont = 0;
+
+volatile unsigned int qtd_pulsos = 0;
+
+
 // Pinos chamados no código várias vezes e que tem sentido semantico importante em suas chamadas.
 
+
+int habilita_drivers_do_motor = 0;
+int entrada_1_driver_do_motor = 0;
+int entrada_2_driver_do_motor = 0;
+int pino_saida_do_encoder = 2;
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 // CONFIGURAÇÕES
+
+
+void configura_saidas(){
+
+  pinMode(habilita_drivers_do_motor, OUTPUT);
+  pinMode(entrada_1_driver_do_motor, OUTPUT);
+  pinMode(entrada_2_driver_do_motor, OUTPUT);
+}
+
+void configura_entradas(){
+  pinMode(pino_saida_do_encoder, INPUT);
+}
+
+void configura_interrupcao_encoder(){
+  // Configura a ISR para o codificador.
+  
+  EIMSK = 0b00000001; // Habilita as insterrupções serem recebidas através do pino PCINT18 (INT0).
+  EICRA = 0b00000011; // Habilita PCINT18 como uma entrada que recebe uma interrupção com borda de subida.
+}
+
 
 // CONFIGURAÇÃO DAS INTERRUPÇÕES PERIÓDICAS:
 
@@ -63,6 +99,18 @@ ISR(TIMER0_COMPA_vect){
 
   // Rotina de interrução chamada períodicamente a cada 2ms.
 
+  cont ++;
+  if (cont == 500){ // A cada 1 segundo, calcula-se a velocidade do motor
+    verifica_velocidade_do_motor(); // atualiza a velocidade do motor;
+    cont = 0; // reseta-se o tempo, e
+    qtd_pulsos = 0; // também a quantiadade de pulsos identificados pelo codificador
+  }
+}
+
+ISR(INT0_vect){
+
+  //  Interrupção acionada pela borda de subida gerada pelo codificador do motor DC.
+  qtd_pulsos++; // Sempre que houve uma borda de saída, o contador de pulsos deve ser incrementado.
 }
 
 
@@ -125,9 +173,9 @@ void verifica_comando_valido(String cmd){
     }
   else if (cmd.substring(0,6) == "RETVEL"){ // Se o comando RETVEL for recebido,
     define_comando_valido(cmd); // define-se esse comando como valido,
-    
-    // EXECUTA O COMANDO;
-    Serial.println("VEL: X RPM"); // retorna-se a velocidade estimada atual.
+    Serial.print("VEL "); // retorna-se a velocidade estimada atual.
+    Serial.print(velocidade_do_motor);
+    Serial.println(" RPM");
     }
   else { // caso nenhum comando valido tenha sido recebido, 
     Serial.println("ERRO: COMANDO INEXISTENTE"); // envia-se que o comando não é valido e
@@ -173,6 +221,33 @@ bool verifica_se_os_parametros_nao_sao_numeros(String param){
   }return false; // caso todos os caracteres estejam no range de simbolos definidos como "numeros" na tabela ASCI, retorna-se false, pois todos são numeros. 
 }
 
+void define_o_giro_do_motor(String parametro){
+
+  if (parametro == "VENT"){
+    digitalWrite(entrada_1_driver_do_motor, HIGH);
+    digitalWrite(entrada_2_driver_do_motor, LOW);
+  }
+  else if (parametro == "EXAUST"){
+    digitalWrite(entrada_1_driver_do_motor, LOW);
+    digitalWrite(entrada_2_driver_do_motor, HIGH);
+  }
+  else{
+    digitalWrite(entrada_1_driver_do_motor, LOW);
+    digitalWrite(entrada_1_driver_do_motor, LOW);
+  }
+}
+
+void define_velocidade_do_motor(int velocidade){
+  
+
+}
+
+void verifica_velocidade_do_motor(){
+
+  // rpm = quantidade de pulsos / quantidade de pulsos por volta . tempo de amostragem
+  velocidade_do_motor = qtd_pulsos / (2*1000);
+}
+
 
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -189,6 +264,8 @@ void setup() {
   cli();
   configuracao_Timer0();
   Serial.begin(9600);
+  configura_interrupcao_encoder();
+  configura_entradas();
   sei();
 }
 
@@ -199,6 +276,4 @@ void setup() {
 void loop() {
   _delay_ms(1);
   recebe_comando();
-  Serial.println(comando);
-  Serial.println(erro);
 }
