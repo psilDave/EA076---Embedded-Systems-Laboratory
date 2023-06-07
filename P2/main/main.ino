@@ -33,10 +33,6 @@ volatile unsigned int cont_time_lcd = 0;
 
 volatile unsigned int qtd_pulsos = 0;
 
-volatile unsigned int unidade = 0;
-volatile unsigned int dezena = 0;
-volatile unsigned int centena = 0;
-volatile unsigned int milhar = 0;
 
 SoftwareSerial bluetooth(12,13); 
 
@@ -280,39 +276,33 @@ void define_velocidade_do_motor(String str_velocidade){
 }
 
 void mostra_velocidade_nos_displays(){
-  // Rotina para enviar dados aos displays de 7 segmentos
-  unidade = 0b11100000 + velocidade_do_motor%10; // captura a unidade da rotação do motor para mostrar no display
-  dezena = 0b11010000 + (velocidade_do_motor%100)/10; // captura a dezena da rotação do motor para mostrar no display
-  centena = 0b10110000 + (velocidade_do_motor%1000)/100; // captura a centena da rotação do motor para mostrar no display
-  milhar = 0b01110000 + velocidade_do_motor/1000; // captura o milhar da rotação do motor para mostrar no display
   
-  Wire.beginTransmission(escravo); // inicia a tranmissão i2c para o 8cf8574.
-    
-  switch (cont_time_display){
-    case 0:
-      Wire.write(unidade);
-    break;
-    case 1:
-      Wire.write(dezena);
-    break;
-    case 2:
-      Wire.write(centena);
-    break;
-    case 3:
-      Wire.write(milhar);
-    break;
-  }  
+  int rpm_thousand = 0x70 + velocidade_do_motor/1000; 
+  int rpm_hundred = 0xB0 + (velocidade_do_motor%1000)/100;
+  int rpm_ten = 0xD0 + (velocidade_do_motor%100)/10;
+  int rpm_unit = 0xE0 + velocidade_do_motor%10;
+
+  Wire.beginTransmission(escravo); 
+
+  if (cont_time_display == 0){
+    Wire.write(unidade);
+
+  }else if(cont_time_display == 1){
+    Wire.write(unidade);
+
+  }else if(cont_time_display == 2){
+    Wire.write(unidade);
+
+  }else{
+    Wire.write(unidade);
+  }
   Wire.endTransmission();
 }
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-// MÁQUINAS DE ESTADO
-
-
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 // CONFIGURAÇÃO INICIAL DO SISTEMA
+
 
 void setup() {
 
