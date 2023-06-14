@@ -41,7 +41,10 @@ volatile unsigned int cont_time_lcd = 0;
 
 volatile unsigned int qtd_pulsos = 0;
 
+<<<<<<< HEAD
 // Objeto responsável por configurar a recepção e transmissão das mensagens pelo Bluetooth.
+=======
+>>>>>>> 29e31d87c4914f00dfbb2a675e403a394b271fab
 
 SoftwareSerial bluetooth(12,13); 
 
@@ -319,12 +322,16 @@ void define_velocidade_do_motor(String str_velocidade){
 
 void mostra_velocidade_nos_displays(){
   
+<<<<<<< HEAD
   // Concatena-se ao endereço de cada display o valor que deve ser mostrado no mesmo. 
+=======
+>>>>>>> 29e31d87c4914f00dfbb2a675e403a394b271fab
   int rpm_thousand = 0x70 + velocidade_do_motor/1000; 
   int rpm_hundred = 0xB0 + (velocidade_do_motor%1000)/100;
   int rpm_ten = 0xD0 + (velocidade_do_motor%100)/10;
   int rpm_unit = 0xE0 + velocidade_do_motor%10;
 
+<<<<<<< HEAD
   // Inicia-se a transmissão para o PCF8574.
   Wire.beginTransmission(escravo); 
 
@@ -343,6 +350,22 @@ void mostra_velocidade_nos_displays(){
   }
   
   // Finaliza-se a transmissão após o digito ser enviado.
+=======
+  Wire.beginTransmission(escravo); 
+
+  if (cont_time_display == 0){
+    Wire.write(unidade);
+
+  }else if(cont_time_display == 1){
+    Wire.write(unidade);
+
+  }else if(cont_time_display == 2){
+    Wire.write(unidade);
+
+  }else{
+    Wire.write(unidade);
+  }
+>>>>>>> 29e31d87c4914f00dfbb2a675e403a394b271fab
   Wire.endTransmission();
 }
 
